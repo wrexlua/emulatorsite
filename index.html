@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rose Software | #1 hvh products</title>
+
+    <meta name="description"
+        content="rose software resmi yönlendirme sayfası. Mağaza, Discord ve Instagram bağlantılarına buradan ulaşabilirsiniz.">
+    <link rel="stylesheet" href="style.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+
+    <div id="loader-wrapper">
+        <div class="loader-content">
+            <div class="logo-wrapper">
+                <img src="media/logo.png" alt="Loading..." class="loader-logo">
+            </div>
+            <div class="loader-bar-container">
+                <div class="loader-bar"></div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="video-container">
+        <video autoplay muted loop playsinline id="bg-video">
+
+            <source src="backgorund/video.mp4" type="video/mp4">
+            <source src="background/video.mp4" type="video/mp4">
+        </video>
+        <div class="video-overlay"></div>
+    </div>
+
+    <canvas id="snow"></canvas>
+
+
+    <main class="main-card">
+        <header class="logo-area">
+            <div class="logo-wrapper">
+                <img src="media/logo.png" alt="ROSE SOFTWARE Logo" class="logo">
+            </div>
+        </header>
+
+
+        <div class="info-box">
+            <div class="info-icon">
+                <i class="fa-solid fa-circle-info"></i>
+            </div>
+            <div class="info-text">
+                <h3>Information:</h3>
+                <p>Welcome to the Rose Software! Use the buttons below for the latest products and support..</p>
+            </div>
+        </div>
+
+
+        <div class="button-group">
+
+            <a href="https://example.com/shop" target="_blank" class="btn btn-primary" id="btn-website">
+                <i class="fa-solid fa-shop"></i>
+                <span>Mağazayı Ziyaret Et</span>
+            </a>
+
+
+            <a href="https://example.com/shop" target="_blank" class="btn btn-secondary" id="btn-discord">
+                <i class="fa-brands fa-discord"></i>
+                <span>Discord Sunucusu</span>
+            </a>
+
+            <a href="https://example.com/instagram" target="_blank" class="btn btn-secondary"
+                id="btn-instagram">
+                <i class="fa-brands fa-instagram"></i>
+                <span>Instagram Hesabımız</span>
+            </a>
+        </div>
+
+
+        <footer class="footer">
+            <p>&copy; 2026 Rose Software - All Rights Reserved</p>
+        </footer>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
