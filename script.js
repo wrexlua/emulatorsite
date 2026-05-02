@@ -1,6 +1,6 @@
 
 document.addEventListener("DOMContentLoaded", () => {
-    console.log("SHIELDHVH yönlendirme paneli aktif.");
+    console.log("Rose Software yönlendirme paneli aktif.");
 
 
     const buttons = document.querySelectorAll(".btn");
