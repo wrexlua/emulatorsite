@@ -57,6 +57,7 @@ async function updateStatus() {
 
         console.log(`[Rose] Final Decision: Offline=${hasOffline}, Maintenance=${hasMaintenance}, Updating=${hasUpdating}, Dev=${hasDevelopment}`);
 
+        // woow
         // Auto-show details if something is not online
         if (hasOffline || hasMaintenance || hasUpdating || hasDevelopment) {
             statusDetails.classList.add('visible');
