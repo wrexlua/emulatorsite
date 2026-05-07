@@ -2,8 +2,92 @@
    ROSE SOFTWARE — Main Script
    ============================================================ */
 
+// ─── Notification System ──────────────────────────────────
+let _prevStatuses = null; // snapshot from last poll
+let _notifQueue = [];
+let _isProcessingQueue = false;
+
+const NOTIF_CONFIG = {
+    online: { icon: 'fa-circle-check', color: '#22e87a', glow: 'rgba(34,232,122,0.35)', label: 'Now Online' },
+    offline: { icon: 'fa-circle-xmark', color: '#ff3232', glow: 'rgba(255,50,50,0.35)', label: 'Went Offline' },
+    bakim: { icon: 'fa-screwdriver-wrench', color: '#ffb400', glow: 'rgba(255,180,0,0.35)', label: 'Under Maintenance' },
+    updating: { icon: 'fa-arrows-rotate', color: '#0096ff', glow: 'rgba(0,150,255,0.35)', label: 'Updating Now' },
+    development: { icon: 'fa-code', color: '#9d50bb', glow: 'rgba(157,80,187,0.35)', label: 'In Development' },
+    loaded: { icon: 'fa-rocket', color: '#ff3366', glow: 'rgba(255,51,102,0.35)', label: 'Loaded' },
+};
+
+async function processNotifQueue() {
+    if (_isProcessingQueue || _notifQueue.length === 0) return;
+    _isProcessingQueue = true;
+
+    while (_notifQueue.length > 0) {
+        const { product, oldStatus, newStatus } = _notifQueue.shift();
+        actualShowNotification(product, oldStatus, newStatus);
+        // Wait 300ms before showing the next one for a beautiful sequence
+        await new Promise(r => setTimeout(r, 300));
+    }
+
+    _isProcessingQueue = false;
+}
+
+function showNotification(product, oldStatus, newStatus) {
+    _notifQueue.push({ product, oldStatus, newStatus });
+    processNotifQueue();
+}
+
+function actualShowNotification(product, oldStatus, newStatus) {
+    const cfg = NOTIF_CONFIG[newStatus] || NOTIF_CONFIG['offline'];
+    const container = document.getElementById('notif-container');
+    if (!container) return;
+
+    // Limit active notifications to 5
+    const activeNotifs = container.querySelectorAll('.rose-notif:not(.notif-exit)');
+    if (activeNotifs.length >= 5) {
+        dismissNotif(activeNotifs[0]); // Dismiss the oldest one
+    }
+
+    const notif = document.createElement('div');
+    notif.className = 'rose-notif';
+    notif.style.setProperty('--notif-color', cfg.color);
+    notif.style.setProperty('--notif-glow', cfg.glow);
+
+    const displayName = product.charAt(0).toUpperCase() + product.slice(1);
+
+    notif.innerHTML = `
+        <div class="notif-icon-wrap">
+            <i class="fa-solid ${cfg.icon}"></i>
+        </div>
+        <div class="notif-body">
+            <span class="notif-product">${displayName}</span>
+            <span class="notif-label">${cfg.label}</span>
+        </div>
+        <button class="notif-close" aria-label="Dismiss"><i class="fa-solid fa-xmark"></i></button>
+        <div class="notif-progress"></div>
+    `;
+
+    container.appendChild(notif);
+
+    // Animate in (slight delay so browser registers initial state)
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => notif.classList.add('notif-visible'));
+    });
+
+    // Close button
+    notif.querySelector('.notif-close').addEventListener('click', () => dismissNotif(notif));
+
+    // Auto-dismiss after 5s
+    const timer = setTimeout(() => dismissNotif(notif), 5000);
+    notif._timer = timer;
+}
+
+function dismissNotif(notif) {
+    clearTimeout(notif._timer);
+    notif.classList.remove('notif-visible');
+    notif.classList.add('notif-exit');
+    notif.addEventListener('transitionend', () => notif.remove(), { once: true });
+}
+
 // ─── Status Fetching ──────────────────────────────────────
-// Hello, world!
 async function updateStatus() {
     // rubis.app raw service for status data
     const statusURL = `https://api.rubis.app/v2/scrap/22ma3RoqsGa7miHa/raw`;
@@ -50,6 +134,17 @@ async function updateStatus() {
             statusDetails.appendChild(item);
         });
 
+        // ── Diff & fire notifications ──────────────────────
+        if (_prevStatuses !== null) {
+            Object.entries(statuses).forEach(([product, newSt]) => {
+                const oldSt = _prevStatuses[product];
+                if (oldSt !== undefined && oldSt !== newSt) {
+                    showNotification(product, oldSt, newSt);
+                }
+            });
+        }
+        _prevStatuses = { ...statuses };
+
         const statusValues = Object.values(statuses);
         const hasOffline = statusValues.includes('offline');
         const hasMaintenance = statusValues.includes('bakim');
@@ -66,6 +161,7 @@ async function updateStatus() {
             statusDetails.classList.remove('visible');
         }
 
+        // Update indicator to always be Online & Working
         statusIndicator.className = 'status-indicator';
         statusDot.className = 'status-dot';
         statusText.textContent = 'Online & Working';
@@ -83,8 +179,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // Initial fetch
     updateStatus();
 
-    // Refresh status every 30 seconds
-    setInterval(updateStatus, 30000);
+    // Refresh status every 5 seconds
+    setInterval(updateStatus, 5000);
 
     // Toggle Details Click
     const indicator = document.querySelector('.status-indicator');
@@ -121,6 +217,8 @@ function hideLoader() {
         if (card) {
             card.style.animation = 'cardReveal 0.8s cubic-bezier(0.23,1,0.32,1) both';
         }
+        // Notify user that system is ready
+        showNotification("Rose Software", null, "loaded");
     }, MIN_DISPLAY_MS);
 }
 
