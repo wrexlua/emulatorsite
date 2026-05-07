@@ -16,6 +16,45 @@ const NOTIF_CONFIG = {
     loaded: { icon: 'fa-rocket', color: '#ff3366', glow: 'rgba(255,51,102,0.35)', label: 'Loaded' },
 };
 
+const PRODUCT_METADATA = {
+    'emulator': {
+        desc: 'Disables and emulates Rivals Anticheat with no ban rate.',
+        supported: '99 UNC'
+    },
+    'bypass': {
+        desc: 'Bypasses Rivals Anticheat to play with cheats.',
+        supported: '99 UNC'
+    },
+    'private': {
+        desc: 'A slotted menu with so much and op features.',
+        supported: '99 UNC'
+    },
+    'unlock all': {
+        desc: 'Unlocks skins & wraps and charms with no detections or bans.',
+        supported: '99 UNC'
+    }
+};
+
+// ─── Last Online Tracking ─────────────────────────────────
+let _lastOnlineTimes = JSON.parse(localStorage.getItem('rose_last_online') || '{}');
+
+function updateLastOnline(product, status) {
+    if (status === 'online') {
+        _lastOnlineTimes[product.toLowerCase()] = Date.now();
+        localStorage.setItem('rose_last_online', JSON.stringify(_lastOnlineTimes));
+    }
+}
+
+function getRelativeTime(product) {
+    const ts = _lastOnlineTimes[product.toLowerCase()];
+    if (!ts) return 'Today';
+    const diff = Math.floor((Date.now() - ts) / 1000);
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    return Math.floor(diff / 86400) + 'd ago';
+}
+
 async function processNotifQueue() {
     if (_isProcessingQueue || _notifQueue.length === 0) return;
     _isProcessingQueue = true;
@@ -87,6 +126,36 @@ function dismissNotif(notif) {
     notif.addEventListener('transitionend', () => notif.remove(), { once: true });
 }
 
+// ─── Modal System ─────────────────────────────────────────
+function openProductModal(productName, status) {
+    const modal = document.getElementById('product-modal');
+    const nameEl = document.getElementById('modal-product-name');
+    const statusEl = document.getElementById('modal-product-status');
+    const descEl = document.getElementById('modal-product-desc');
+
+    const meta = PRODUCT_METADATA[productName.toLowerCase()] || {
+        desc: 'Premium cheat solution for top-tier competitive play. Always undetected and optimized for performance.',
+        stats: { updated: 'Today', system: 'Win 10/11' }
+    };
+
+    nameEl.textContent = productName.charAt(0).toUpperCase() + productName.slice(1);
+    statusEl.textContent = status.toUpperCase();
+    statusEl.className = `item-badge ${status}`;
+    descEl.textContent = meta.desc || 'Premium rivals cheat solution.';
+    
+    const statUpdated = document.querySelector('.modal-stats .stat-item:nth-child(1) .stat-value');
+    const statSystem = document.querySelector('.modal-stats .stat-item:nth-child(2) .stat-value');
+    
+    if (statUpdated) statUpdated.textContent = getRelativeTime(productName);
+    if (statSystem) statSystem.textContent = meta.supported || '99 UNC';
+
+    modal.classList.add('active');
+}
+
+function closeProductModal() {
+    document.getElementById('product-modal').classList.remove('active');
+}
+
 // ─── Status Fetching ──────────────────────────────────────
 async function updateStatus() {
     // rubis.app raw service for status data
@@ -106,15 +175,51 @@ async function updateStatus() {
         const lines = data.split('\n');
         const statuses = {};
 
-        lines.forEach(line => {
-            if (line.includes('=')) {
-                // Remove curly braces, quotes, commas, and other noise
-                let [key, value] = line.replace(/[{}",]/g, '').split('=');
-                if (key && value) {
-                    statuses[key.trim()] = value.trim().toLowerCase();
+        // More robust parser for the new structured API response
+        const productBlocks = data.match(/"([^"]+)"\s*\{([^}]+)\}/g);
+        
+        if (productBlocks) {
+            productBlocks.forEach(block => {
+                const nameMatch = block.match(/"([^"]+)"/);
+                if (!nameMatch) return;
+                const name = nameMatch[1];
+                
+                // Extract properties like status, desc, supported
+                const props = {};
+                const assignments = block.match(/([^,{]+)\s*=\s*([^,}]+)/g);
+                if (assignments) {
+                    assignments.forEach(assign => {
+                        let [k, v] = assign.split('=').map(s => s.trim().replace(/^"|"$/g, '').replace(/,$/, ''));
+                        props[k] = v;
+                    });
                 }
-            }
-        });
+
+                const status = (props.status || 'offline').toLowerCase();
+                const oldStatus = (_prevStatuses && _prevStatuses[name]) || null;
+                statuses[name] = status;
+
+                // Track "Last Online" only if it just BECAME online (or if we have no record yet)
+                if (status === 'online' && (oldStatus !== 'online' || !_lastOnlineTimes[name.toLowerCase()])) {
+                    updateLastOnline(name, status);
+                }
+
+                // Sync API data with our metadata
+                if (!PRODUCT_METADATA[name.toLowerCase()]) PRODUCT_METADATA[name.toLowerCase()] = {};
+                if (props.desc) PRODUCT_METADATA[name.toLowerCase()].desc = props.desc;
+                if (props.supported) PRODUCT_METADATA[name.toLowerCase()].supported = props.supported;
+            });
+        } else {
+            // Fallback for simple key=value format just in case
+            lines.forEach(line => {
+                if (line.includes('=')) {
+                    let [key, value] = line.replace(/[{}",]/g, '').split('=');
+                    if (key && value) {
+                        statuses[key.trim()] = value.trim().toLowerCase();
+                        updateLastOnline(key.trim(), value.trim().toLowerCase());
+                    }
+                }
+            });
+        }
 
         console.log("[Rose] Parsed Statuses Object:", statuses);
 
@@ -131,6 +236,9 @@ async function updateStatus() {
                 <span class="item-name">${product}</span>
                 <span class="item-badge">${displayStatus}</span>
             `;
+
+            item.addEventListener('click', () => openProductModal(product, status));
+
             statusDetails.appendChild(item);
         });
 
@@ -154,11 +262,9 @@ async function updateStatus() {
         console.log(`[Rose] Final Decision: Offline=${hasOffline}, Maintenance=${hasMaintenance}, Updating=${hasUpdating}, Dev=${hasDevelopment}`);
 
         // woow
-        // Auto-show details if something is not online
+        // Auto-show details if something is not online (but don't auto-hide if they are all online)
         if (hasOffline || hasMaintenance || hasUpdating || hasDevelopment) {
             statusDetails.classList.add('visible');
-        } else {
-            statusDetails.classList.remove('visible');
         }
 
         // Update indicator to always be Online & Working
@@ -198,6 +304,15 @@ document.addEventListener("DOMContentLoaded", () => {
             document.body.style.background =
                 "radial-gradient(ellipse at top, #1a0a25 0%, #060608 60%)";
         }, true);
+    }
+
+    // Modal Events
+    const modal = document.getElementById('product-modal');
+    if (modal) {
+        modal.querySelector('.modal-close').addEventListener('click', closeProductModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeProductModal();
+        });
     }
 });
 
