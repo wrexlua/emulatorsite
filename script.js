@@ -3,6 +3,7 @@
    ============================================================ */
 
 // ─── Status Fetching ──────────────────────────────────────
+// Hello, world!
 async function updateStatus() {
     // rubis.app raw service for status data
     const statusURL = `https://api.rubis.app/v2/scrap/22ma3RoqsGa7miHa/raw`;
