@@ -62,9 +62,9 @@ function actualShowNotification(product, oldStatus, newStatus) {
     const container = document.getElementById('notif-container');
     if (!container) return;
 
-    // Limit active notifications to 5
+    // Limit active notifications to 10
     const activeNotifs = container.querySelectorAll('.rose-notif:not(.notif-exit)');
-    if (activeNotifs.length >= 5) {
+    if (activeNotifs.length >= 10) {
         dismissNotif(activeNotifs[0]); // Dismiss the oldest one
     }
 
@@ -247,10 +247,40 @@ async function updateStatus() {
             statusDetails.classList.add('visible');
         }
 
-        // Update indicator to always be Online & Working
-        statusIndicator.className = 'status-indicator';
-        statusDot.className = 'status-dot';
-        statusText.textContent = 'Working & Undetected';
+        // 1. Try to get Global Status from API (e.g. StatusText = "Working & Undetected", "online")
+        const statusTextMatch = data.match(/StatusText\s*=\s*"([^"]+)"\s*,\s*"([^"]+)"/i);
+
+        if (statusTextMatch) {
+            const apiText = statusTextMatch[1];
+            const apiStatus = statusTextMatch[2].toLowerCase();
+
+            statusIndicator.className = `status-indicator ${apiStatus === 'online' ? '' : apiStatus}`;
+            statusDot.className = `status-dot ${apiStatus === 'online' ? '' : apiStatus}`;
+            statusText.textContent = apiText;
+        } else {
+            // Fallback: Dynamic worst-case logic
+            if (hasOffline) {
+                statusIndicator.className = 'status-indicator offline';
+                statusDot.className = 'status-dot offline';
+                statusText.textContent = 'Partially Offline';
+            } else if (hasMaintenance) {
+                statusIndicator.className = 'status-indicator maintenance';
+                statusDot.className = 'status-dot maintenance';
+                statusText.textContent = 'Under Maintenance';
+            } else if (hasUpdating) {
+                statusIndicator.className = 'status-indicator updating';
+                statusDot.className = 'status-dot updating';
+                statusText.textContent = 'Updating...';
+            } else if (hasDevelopment) {
+                statusIndicator.className = 'status-indicator development';
+                statusDot.className = 'status-dot development';
+                statusText.textContent = 'In Development';
+            } else {
+                statusIndicator.className = 'status-indicator';
+                statusDot.className = 'status-dot';
+                statusText.textContent = 'Working & Undetected';
+            }
+        }
 
     } catch (error) {
         console.error("[Rose] Status error:", error);
