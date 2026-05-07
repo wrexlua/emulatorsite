@@ -106,21 +106,29 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ─── Loader — waits for bar animation (2.2s) + small buffer ──
-window.addEventListener("load", () => {
+function hideLoader() {
     const loader = document.getElementById("loader-wrapper");
     const card = document.querySelector('.main-card');
+
+    if (!loader || loader.classList.contains("loaded")) return;
 
     // Bar animation is 2.2s; wait 2.6s total for a clean finish
     const MIN_DISPLAY_MS = 2600;
 
     setTimeout(() => {
-        if (loader) loader.classList.add("loaded");
+        loader.classList.add("loaded");
         // Reveal the card after loader fades
         if (card) {
             card.style.animation = 'cardReveal 0.8s cubic-bezier(0.23,1,0.32,1) both';
         }
     }, MIN_DISPLAY_MS);
-});
+}
+
+// Trigger hide on window load
+window.addEventListener("load", hideLoader);
+
+// Safety Timeout: If assets take too long (e.g. video), hide loader anyway after 5s
+setTimeout(hideLoader, 5000);
 
 // ─── Particle / Snow Canvas ───────────────────────────────
 (function setupParticles() {
