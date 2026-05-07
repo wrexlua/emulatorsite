@@ -142,10 +142,10 @@ function openProductModal(productName, status) {
     statusEl.textContent = status.toUpperCase();
     statusEl.className = `item-badge ${status}`;
     descEl.textContent = meta.desc || 'Premium rivals cheat solution.';
-    
+
     const statUpdated = document.querySelector('.modal-stats .stat-item:nth-child(1) .stat-value');
     const statSystem = document.querySelector('.modal-stats .stat-item:nth-child(2) .stat-value');
-    
+
     if (statUpdated) statUpdated.textContent = getRelativeTime(productName);
     if (statSystem) statSystem.textContent = meta.supported || '99 UNC';
 
@@ -170,20 +170,19 @@ async function updateStatus() {
         if (!response.ok) throw new Error("Status fetch failed");
 
         const data = await response.text();
-        console.log("[Rose] Status Data Received:", data);
 
         const lines = data.split('\n');
         const statuses = {};
 
         // More robust parser for the new structured API response
         const productBlocks = data.match(/"([^"]+)"\s*\{([^}]+)\}/g);
-        
+
         if (productBlocks) {
             productBlocks.forEach(block => {
                 const nameMatch = block.match(/"([^"]+)"/);
                 if (!nameMatch) return;
                 const name = nameMatch[1];
-                
+
                 // Extract properties like status, desc, supported
                 const props = {};
                 const assignments = block.match(/([^,{]+)\s*=\s*([^,}]+)/g);
@@ -221,7 +220,6 @@ async function updateStatus() {
             });
         }
 
-        console.log("[Rose] Parsed Statuses Object:", statuses);
 
         // Populate Details
         statusDetails.innerHTML = '';
@@ -259,7 +257,6 @@ async function updateStatus() {
         const hasUpdating = statusValues.includes('updating');
         const hasDevelopment = statusValues.includes('development');
 
-        console.log(`[Rose] Final Decision: Offline=${hasOffline}, Maintenance=${hasMaintenance}, Updating=${hasUpdating}, Dev=${hasDevelopment}`);
 
         // woow
         // Auto-show details if something is not online (but don't auto-hide if they are all online)
