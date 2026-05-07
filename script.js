@@ -16,24 +16,7 @@ const NOTIF_CONFIG = {
     loaded: { icon: 'fa-rocket', color: '#ff3366', glow: 'rgba(255,51,102,0.35)', label: 'Loaded' },
 };
 
-const PRODUCT_METADATA = {
-    'emulator': {
-        desc: 'Disables and emulates Rivals Anticheat with no ban rate.',
-        supported: '99 UNC'
-    },
-    'bypass': {
-        desc: 'Bypasses Rivals Anticheat to play with cheats.',
-        supported: '99 UNC'
-    },
-    'private': {
-        desc: 'A slotted menu with so much and op features.',
-        supported: '99 UNC'
-    },
-    'unlock all': {
-        desc: 'Unlocks skins & wraps and charms with no detections or bans.',
-        supported: '99 UNC'
-    }
-};
+let PRODUCT_METADATA = {};
 
 // ─── Last Online Tracking ─────────────────────────────────
 let _lastOnlineTimes = JSON.parse(localStorage.getItem('rose_last_online') || '{}');
