@@ -118,7 +118,7 @@ function openProductModal(productName, status) {
 
     const meta = PRODUCT_METADATA[productName.toLowerCase()] || {
         desc: 'Premium cheat solution for top-tier competitive play. Always undetected and optimized for performance.',
-        stats: { updated: 'Today', system: 'Win 10/11' }
+        stats: { updated: 'Today', startingat: '$29.99' }
     };
 
     nameEl.textContent = productName.charAt(0).toUpperCase() + productName.slice(1);
@@ -130,7 +130,7 @@ function openProductModal(productName, status) {
     const statSystem = document.querySelector('.modal-stats .stat-item:nth-child(2) .stat-value');
 
     if (statUpdated) statUpdated.textContent = getRelativeTime(productName);
-    if (statSystem) statSystem.textContent = meta.supported || '99 UNC';
+    if (statSystem) statSystem.textContent = meta.startingat ? meta.startingat : '$29.99';
 
     modal.classList.add('active');
 }
@@ -166,7 +166,7 @@ async function updateStatus() {
                 if (!nameMatch) return;
                 const name = nameMatch[1];
 
-                // Extract properties like status, desc, supported
+                // Extract properties like status, desc, startingat
                 const props = {};
                 const assignments = block.match(/([^,{]+)\s*=\s*([^,}]+)/g);
                 if (assignments) {
@@ -188,7 +188,7 @@ async function updateStatus() {
                 // Sync API data with our metadata
                 if (!PRODUCT_METADATA[name.toLowerCase()]) PRODUCT_METADATA[name.toLowerCase()] = {};
                 if (props.desc) PRODUCT_METADATA[name.toLowerCase()].desc = props.desc;
-                if (props.supported) PRODUCT_METADATA[name.toLowerCase()].supported = props.supported;
+                if (props.startingat) PRODUCT_METADATA[name.toLowerCase()].startingat = props.startingat;
             });
         } else {
             // Fallback for simple key=value format just in case
