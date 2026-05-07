@@ -164,7 +164,7 @@ async function updateStatus() {
         // Update indicator to always be Online & Working
         statusIndicator.className = 'status-indicator';
         statusDot.className = 'status-dot';
-        statusText.textContent = 'Online & Working';
+        statusText.textContent = 'Working & Undetected';
 
     } catch (error) {
         console.error("[Rose] Status error:", error);
