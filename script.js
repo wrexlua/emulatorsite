@@ -6,6 +6,7 @@
 let _prevStatuses = null; // snapshot from last poll
 let _notifQueue = [];
 let _isProcessingQueue = false;
+let _isFirstLoad = true;
 
 const NOTIF_CONFIG = {
     online: { icon: 'fa-circle-check', color: '#22e87a', glow: 'rgba(34,232,122,0.35)', label: 'Now Online' },
@@ -28,9 +29,33 @@ function updateLastOnline(product, status) {
     }
 }
 
-function getRelativeTime(product) {
-    const ts = _lastOnlineTimes[product.toLowerCase()];
-    if (!ts) return 'Today';
+function getRelativeTime(product, apiUpdateStr) {
+    let ts;
+    if (apiUpdateStr) {
+        try {
+            // Parse "8.05.2026 17:16:11" format
+            const parts = apiUpdateStr.split(' ');
+            if (parts.length === 2) {
+                const dateParts = parts[0].split('.');
+                const timeParts = parts[1].split(':');
+                if (dateParts.length === 3 && timeParts.length === 3) {
+                    const d = parseInt(dateParts[0]);
+                    const m = parseInt(dateParts[1]) - 1;
+                    const y = parseInt(dateParts[2]);
+                    const h = parseInt(timeParts[0]);
+                    const min = parseInt(timeParts[1]);
+                    const s = parseInt(timeParts[2]);
+                    ts = new Date(y, m, d, h, min, s).getTime();
+                }
+            }
+        } catch (e) {
+            console.error("Error parsing date:", apiUpdateStr);
+        }
+    }
+
+    if (!ts) ts = _lastOnlineTimes[product.toLowerCase()];
+    if (!ts) return 'Recently';
+
     const diff = Math.floor((Date.now() - ts) / 1000);
     if (diff < 60) return 'Just now';
     if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
@@ -121,16 +146,19 @@ function openProductModal(productName, status) {
         stats: { updated: 'Today', startingat: '$29.99' }
     };
 
+    let displayStatus = status.toUpperCase();
+    if (status.toLowerCase() === 'bakim') displayStatus = 'MAINTENANCE';
+
     nameEl.textContent = productName.charAt(0).toUpperCase() + productName.slice(1);
-    statusEl.textContent = status.toUpperCase();
-    statusEl.className = `item-badge ${status}`;
+    statusEl.textContent = displayStatus;
+    statusEl.className = `modal-product-status-tag ${status.toLowerCase()}`;
     descEl.textContent = meta.desc || 'Premium rivals cheat solution.';
 
-    const statUpdated = document.querySelector('.modal-stats .stat-item:nth-child(1) .stat-value');
-    const statSystem = document.querySelector('.modal-stats .stat-item:nth-child(2) .stat-value');
+    const statUpdated = document.getElementById('stat-updated');
+    const statPrice = document.getElementById('stat-price');
 
-    if (statUpdated) statUpdated.textContent = getRelativeTime(productName);
-    if (statSystem) statSystem.textContent = meta.startingat ? meta.startingat : '$29.99';
+    if (statUpdated) statUpdated.textContent = getRelativeTime(productName, meta.update);
+    if (statPrice) statPrice.textContent = meta.startingat ? meta.startingat : '$29.99';
 
     modal.classList.add('active');
 }
@@ -166,9 +194,9 @@ async function updateStatus() {
                 if (!nameMatch) return;
                 const name = nameMatch[1];
 
-                // Extract properties like status, desc, startingat
+                // Extract properties like status, desc, startingat, update
                 const props = {};
-                const assignments = block.match(/([^,{]+)\s*=\s*([^,}]+)/g);
+                const assignments = block.match(/([^=\s,{]+)\s*=\s*("([^"]*)"|[^,}]+)/g);
                 if (assignments) {
                     assignments.forEach(assign => {
                         let [k, v] = assign.split('=').map(s => s.trim().replace(/^"|"$/g, '').replace(/,$/, ''));
@@ -189,6 +217,7 @@ async function updateStatus() {
                 if (!PRODUCT_METADATA[name.toLowerCase()]) PRODUCT_METADATA[name.toLowerCase()] = {};
                 if (props.desc) PRODUCT_METADATA[name.toLowerCase()].desc = props.desc;
                 if (props.startingat) PRODUCT_METADATA[name.toLowerCase()].startingat = props.startingat;
+                if (props.update) PRODUCT_METADATA[name.toLowerCase()].update = props.update;
             });
         } else {
             // Fallback for simple key=value format just in case
@@ -241,11 +270,11 @@ async function updateStatus() {
         const hasDevelopment = statusValues.includes('development');
 
 
-        // woow
-        // Auto-show details if something is not online (but don't auto-hide if they are all online)
-        if (hasOffline || hasMaintenance || hasUpdating || hasDevelopment) {
+        // Auto-show details ONLY on first load if something is not online
+        if (_isFirstLoad && (hasOffline || hasMaintenance || hasUpdating || hasDevelopment)) {
             statusDetails.classList.add('visible');
         }
+        _isFirstLoad = false;
 
         // 1. Try to get Global Status from API (e.g. StatusText = "Working & Undetected", "online")
         const statusTextMatch = data.match(/StatusText\s*=\s*"([^"]+)"\s*,\s*"([^"]+)"/i);
@@ -298,6 +327,50 @@ document.addEventListener("DOMContentLoaded", () => {
     // Refresh status every 5 seconds
     setInterval(updateStatus, 5000);
 
+    // ─── God Tier Interactivity ───────────────────────────
+    const card = document.querySelector('.main-card');
+    const follower = document.getElementById('cursor-follower');
+
+    document.addEventListener('mousemove', (e) => {
+        // Cursor Follower
+        if (follower) {
+            follower.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+        }
+
+        // 3D Card Tilt
+        if (card) {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            const rotateX = (y - centerY) / 20;
+            const rotateY = (centerX - x) / 20;
+            
+            card.style.transform = `perspective(2000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        }
+    });
+
+    // Reset tilt on mouse leave
+    document.addEventListener('mouseleave', () => {
+        if (card) {
+            card.style.transform = `perspective(2000px) rotateX(0deg) rotateY(0deg)`;
+        }
+    });
+
+    // ─── Mouse-Following Border Glow ─────────────────────
+    document.addEventListener('mousemove', (e) => {
+        if (card) {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            card.style.setProperty('--mouse-x', `${x}px`);
+            card.style.setProperty('--mouse-y', `${y}px`);
+        }
+    });
+
     // Toggle Details Click
     const indicator = document.querySelector('.status-indicator');
     if (indicator) {
@@ -319,7 +392,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // Modal Events
     const modal = document.getElementById('product-modal');
     if (modal) {
-        modal.querySelector('.modal-close').addEventListener('click', closeProductModal);
+        const closeBtn = modal.querySelector('.modal-close-top');
+        if (closeBtn) closeBtn.addEventListener('click', closeProductModal);
         modal.addEventListener('click', (e) => {
             if (e.target === modal) closeProductModal();
         });
@@ -370,10 +444,18 @@ setTimeout(hideLoader, 5000);
         reset(randomY = false) {
             this.x = Math.random() * canvas.width;
             this.y = randomY ? Math.random() * canvas.height : -10;
-            this.size = Math.random() * 1.6 + 0.4;
-            this.speedX = (Math.random() - 0.5) * 0.6;
-            this.speedY = Math.random() * 1.2 + 0.4;
-            this.opacity = Math.random() * 0.45 + 0.15;
+            this.size = Math.random() * 1.8 + 0.4;
+            this.speedX = (Math.random() - 0.5) * 0.8;
+            this.speedY = Math.random() * 1.5 + 0.5;
+            this.opacity = Math.random() * 0.4 + 0.1;
+            
+            // Randomly pick between white, rose, and purple particles
+            const colors = [
+                `rgba(255, 255, 255, ${this.opacity})`,
+                `rgba(255, 45, 85, ${this.opacity * 0.8})`,
+                `rgba(162, 89, 255, ${this.opacity * 0.6})`
+            ];
+            this.color = colors[Math.floor(Math.random() * colors.length)];
         }
 
         update() {
@@ -385,10 +467,18 @@ setTimeout(hideLoader, 5000);
         }
 
         draw() {
-            ctx.fillStyle = `rgba(255,255,255,${this.opacity})`;
+            ctx.fillStyle = this.color;
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
             ctx.fill();
+            
+            // Add subtle glow to colored particles
+            if (this.color !== `rgba(255, 255, 255, ${this.opacity})`) {
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = this.color;
+            } else {
+                ctx.shadowBlur = 0;
+            }
         }
     }
 
@@ -396,7 +486,7 @@ setTimeout(hideLoader, 5000);
 
     function init() {
         resize();
-        particles = Array.from({ length: 110 }, () => new Particle());
+        particles = Array.from({ length: 120 }, () => new Particle());
     }
 
     function animate() {

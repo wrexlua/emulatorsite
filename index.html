@@ -18,6 +18,9 @@
 </head>
 
 <body>
+    <div id="cursor-follower"></div>
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
 
     <div id="loader-wrapper">
         <div class="loader-content">
@@ -41,6 +44,7 @@
 
 
     <main class="main-card">
+        <div class="scan-line"></div>
         <div class="glow-sphere"></div>
 
         <header class="logo-area">
@@ -99,39 +103,44 @@
         </footer>
     </main>
 
-    <!-- Product Detail Modal -->
+    <!-- Revamped Product Detail Modal -->
     <div id="product-modal" class="modal-overlay">
         <div class="modal-content">
-            <button class="modal-close"><i class="fa-solid fa-xmark"></i></button>
-            <div class="modal-header">
-                <div class="modal-icon-wrap">
-                    <i class="fa-solid fa-microchip"></i>
-                </div>
-                <div class="modal-title-area">
-                    <h2 id="modal-product-name">Product Name</h2>
-                    <span id="modal-product-status" class="item-badge">STATUS</span>
+            <button class="modal-close-top"><i class="fa-solid fa-xmark"></i></button>
+            
+            <div class="modal-hero">
+                <div class="modal-hero-content">
+                    <div class="modal-hero-icon">
+                        <i class="fa-solid fa-microchip"></i>
+                    </div>
                 </div>
             </div>
-            <div class="modal-body">
+
+            <div class="modal-main-body">
+                <h2 id="modal-product-name" class="modal-product-title">Product Name</h2>
+                <span id="modal-product-status" class="modal-product-status-tag">STATUS</span>
+                
                 <div class="modal-desc-box">
                     <p id="modal-product-desc">Loading description...</p>
                 </div>
-                <div class="modal-stats">
-                    <div class="stat-item">
-                        <span class="stat-label">Last Updated</span>
-                        <span class="stat-value">Today</span>
+
+                <div class="modal-stats-grid">
+                    <div class="m-stat-item">
+                        <span class="m-stat-label">Last Updated</span>
+                        <span id="stat-updated" class="m-stat-value">Today</span>
                     </div>
-                    <div class="stat-item">
-                        <span class="stat-label">From</span>
-                        <span class="stat-value">Win 10/11</span>
+                    <div class="m-stat-item">
+                        <span class="m-stat-label">Price</span>
+                        <span id="stat-price" class="m-stat-value">$29.99</span>
                     </div>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <a href="https://discord.gg/ArBCdZ22JC" target="_blank" class="glass-btn primary">
-                    <i class="fa-solid fa-cart-shopping"></i>
-                    <span>Purchase</span>
-                </a>
+
+                <div class="modal-action-bar">
+                    <a href="https://discord.gg/ArBCdZ22JC" target="_blank" class="glass-btn primary">
+                        <i class="fa-solid fa-cart-shopping"></i>
+                        <span>Purchase</span>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
