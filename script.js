@@ -152,7 +152,7 @@ function openProductModal(productName, status) {
     nameEl.textContent = productName.charAt(0).toUpperCase() + productName.slice(1);
     statusEl.textContent = displayStatus;
     statusEl.className = `modal-product-status-tag ${status.toLowerCase()}`;
-    descEl.textContent = meta.desc || 'Premium rivals cheat solution.';
+    descEl.textContent = meta.desc || 'Premium valorant cheat solution.';
 
     const statUpdated = document.getElementById('stat-updated');
     const statPrice = document.getElementById('stat-price');
